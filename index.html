@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BLOB///">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<title>BLOB///</title>
+<style>
+:root{--acc:#ff2a2a;--fg:#e8e2d4;--ink:#0a0a0a}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#000;color:var(--fg);font-family:ui-monospace,"SF Mono",Menlo,"Roboto Mono",Consolas,monospace;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;overscroll-behavior:none}
+#c{position:fixed;inset:0;display:block}
+#v{position:fixed;left:0;top:0;width:2px;height:2px;opacity:0;pointer-events:none}
+#safe{position:fixed;padding-top:env(safe-area-inset-top);visibility:hidden;pointer-events:none}
+button{font:inherit;color:inherit;cursor:pointer;border-radius:0}
+
+/* barra inferior */
+#bar{position:fixed;left:0;right:0;bottom:0;padding:18px 0 calc(16px + env(safe-area-inset-bottom));background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.8) 45%);transition:opacity .2s}
+#bar.hide{opacity:0;pointer-events:none}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:0 12px 14px;scrollbar-width:none;touch-action:pan-x}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--fg);background:rgba(0,0,0,.6);font-size:11px;letter-spacing:.08em;padding:8px 10px;text-transform:uppercase}
+.chip b{color:var(--acc);font-weight:700;margin-right:6px}
+.chip:active{background:var(--acc);color:var(--ink)}
+.chip.fx{border-color:var(--acc);background:var(--acc);color:var(--ink);font-weight:700}
+.chip.fx b{color:var(--ink)}
+body.clean .chip.fx{background:transparent;color:var(--fg)}
+body.clean .chip.fx b{color:var(--fg)}
+body.clean .chip:not(.fx){opacity:.3;pointer-events:none}
+.main{display:flex;justify-content:space-around;align-items:center}
+.rb{width:54px;height:54px;border:1px solid var(--fg);background:rgba(0,0,0,.55);font-size:20px;line-height:1}
+.rb:active{background:var(--fg);color:var(--ink)}
+#shot{width:78px;height:78px;border-radius:50%;border:2px solid var(--fg);background:transparent;position:relative}
+#shot::after{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--fg)}
+#shot:active::after{background:var(--acc)}
+#rec{color:var(--acc);font-size:22px}
+#rec.on{background:var(--acc);color:var(--ink);border-color:var(--acc);animation:bl 1s steps(2) infinite}
+@keyframes bl{50%{opacity:.45}}
+
+/* intro */
+#intro{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:32px;gap:22px;background:#000 repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px)}
+.logo{font-size:clamp(54px,18vw,120px);font-weight:800;letter-spacing:-.04em;line-height:.85;text-shadow:3px 0 var(--acc),-3px 0 #00e5ff;animation:jit 2.4s infinite}
+.logo span{color:var(--acc);text-shadow:none}
+@keyframes jit{0%,92%,100%{transform:none}93%{transform:translate(4px,-2px) skewX(8deg)}95%{transform:translate(-5px,1px)}97%{transform:translate(2px,2px) skewX(-6deg)}}
+.sub{font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.75;line-height:1.8}
+.sub i{color:var(--acc);font-style:normal}
+#go{border:1px solid var(--fg);background:transparent;padding:16px 18px;font-size:14px;letter-spacing:.16em}
+#file{border:1px dashed var(--fg);background:transparent;padding:12px 18px;font-size:12px;letter-spacing:.16em;opacity:.85;margin-top:-10px}
+#go:active,#file:active{background:var(--acc);border-color:var(--acc);color:#000}
+#err{font-size:12px;line-height:1.6;color:var(--acc);max-width:34em;min-height:1em}
+
+/* ajustes */
+#cfg{position:fixed;inset:0;background:rgba(0,0,0,.92);padding:calc(24px + env(safe-area-inset-top)) 22px calc(24px + env(safe-area-inset-bottom));overflow-y:auto;touch-action:pan-y;display:flex;flex-direction:column;gap:18px}
+#cfg h2{font-size:22px;letter-spacing:.06em}
+#cfg h2 span{color:var(--acc)}
+#cfg label{display:flex;flex-direction:column;gap:8px;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+#cfg label em{font-style:normal;color:var(--acc);float:right}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent}
+input[type=range]::-webkit-slider-runnable-track{height:1px;background:var(--fg)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:var(--acc);margin-top:-9px;border:0}
+input[type=range]::-moz-range-track{height:1px;background:var(--fg)}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;background:var(--acc);border:0;border-radius:0}
+textarea{font:inherit;font-size:14px;background:transparent;color:var(--fg);border:1px solid var(--fg);padding:10px;resize:vertical;text-transform:none;letter-spacing:0;user-select:text;-webkit-user-select:text}
+.hint{font-size:11px;opacity:.6;line-height:1.6}
+#cfgclose{border:1px solid var(--fg);background:transparent;padding:14px;letter-spacing:.16em;margin-top:6px}
+
+/* vista previa */
+#pv{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;padding:calc(14px + env(safe-area-inset-top)) 14px calc(16px + env(safe-area-inset-bottom));gap:14px}
+.pvbox{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.2)}
+.pvbox img,.pvbox video{max-width:100%;max-height:100%;display:block}
+.pvbtns{display:flex;gap:10px}
+.pvbtns button{flex:1;padding:16px;border:1px solid var(--fg);background:transparent;letter-spacing:.14em}
+#pvsave{background:var(--acc);border-color:var(--acc);color:var(--ink);font-weight:700}
+
+#flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none}
+#flash.go{animation:fl .35s ease-out}
+@keyframes fl{0%{opacity:.85}100%{opacity:0}}
+#toast{position:fixed;left:50%;top:calc(60px + env(safe-area-inset-top));transform:translateX(-50%);background:var(--acc);color:var(--ink);font-size:12px;letter-spacing:.08em;padding:8px 12px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
+#toast.on{opacity:1}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div id="safe"></div>
+<video id="v" playsinline muted autoplay></video>
+<canvas id="c"></canvas>
+
+<div id="bar" hidden>
+  <div class="chips" id="chips"></div>
+  <div class="main">
+    <button class="rb" id="flip" aria-label="Cambiar cámara">⟲</button>
+    <button id="shot" aria-label="Hacer foto"></button>
+    <button class="rb" id="rec" aria-label="Grabar vídeo">●</button>
+  </div>
+</div>
+
+<div id="intro">
+  <div class="logo">BLOB<span>///</span></div>
+  <p class="sub">cámara de rastreo · <i>uso privado</i><br>v0.1 · sin señal · sin dueño</p>
+  <button id="go">[ ENCENDER EL OJO ]</button>
+  <button id="file" class="alt">[ CARGAR UN VÍDEO ]</button>
+  <input type="file" id="fin" accept="video/*" hidden>
+  <p id="err"></p>
+</div>
+
+<div id="cfg" hidden>
+  <h2>AJUSTES<span>_</span></h2>
+  <label>Sensibilidad <em id="o-sens"></em><input type="range" id="sens" min="5" max="100"></label>
+  <label>Máximo de blobs <em id="o-max"></em><input type="range" id="max" min="2" max="30"></label>
+  <label>Resolución (menos = más píxel) <em id="o-grain"></em><input type="range" id="grain" min="90" max="520" step="10"></label>
+  <label>Ruido <em id="o-noise"></em><input type="range" id="noise" min="0" max="90"></label>
+  <label>Glitch <em id="o-glitch"></em><input type="range" id="glitch" min="0" max="100"></label>
+  <label>Palabras (separadas por comas o por líneas)<textarea id="words" rows="6"></textarea></label>
+  <p class="hint">· El primer botón alterna entre EFECTOS y la cámara TAL CUAL.<br>· RUIDO también decide cuánto se mueven los píxeles y cuántas rayas salen en INTERF.<br>· Toca la pantalla para forzar un glitch.<br>· El modo ETIQ › PALABRAS pone tus palabras sobre lo que se mueve.<br>· Los vídeos se cortan solos a los 60 segundos.</p>
+  <button id="cfgclose">[ VOLVER ]</button>
+</div>
+
+<div id="pv" hidden>
+  <div class="pvbox"><img id="pvimg" alt=""><video id="pvvid" playsinline loop muted autoplay controls></video></div>
+  <div class="pvbtns"><button id="pvclose">DESCARTAR</button><button id="pvsave">GUARDAR</button></div>
+</div>
+
+<div id="flash"></div>
+<div id="toast"></div>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const video = $('#v'), cv = $('#c'), ctx = cv.getContext('2d');
+const buf = document.createElement('canvas'), bctx = buf.getContext('2d', {willReadFrequently: true});
+const det = document.createElement('canvas'), dctx = det.getContext('2d', {willReadFrequently: true});
+const tiny = document.createElement('canvas'), tctx = tiny.getContext('2d');
+
+/* ---------- paletas y opciones ---------- */
+const PALETTES = {
+  'HUESO':  {bg:[10,10,10],  fg:[232,226,212], acc:'#ff2a2a', ink:'#0a0a0a'},
+  'ÁCIDO':  {bg:[6,8,4],     fg:[200,255,0],   acc:'#f4f4ec', ink:'#060804'},
+  'SANGRE': {bg:[14,0,2],    fg:[255,48,48],   acc:'#f2e9e4', ink:'#0e0002'},
+  'UV':     {bg:[16,0,36],   fg:[255,84,214],  acc:'#7df9ff', ink:'#100024'},
+  'CROMO':  {bg:[0,0,0],     fg:[255,255,255], acc:'#ffffff', ink:'#000000'}
+};
+const OPTS = {
+  base:   ['TINTA','GRIS','PÓSTER','COLOR','01','PIXEL','PLUS','INTERF'],
+  pal:    Object.keys(PALETTES),
+  track:  ['SÍ','NO'],
+  detect: ['MOV','LUZ','MIX'],
+  inside: ['INV','ZOOM','PIXEL','TINTE','NADA'],
+  label:  ['DATOS','PALABRAS','NADA'],
+  net:    ['RED','CADENA','NO']
+};
+const NAMES = {base:'FILTRO', track:'RASTREO', detect:'OJO', inside:'DENTRO', label:'ETIQ', net:'HILOS', pal:'TINTA'};
+
+const st = {fx:true, base:0, track:0, detect:0, inside:0, label:0, net:0, pal:0,
+  sens:55, max:12, grain:260, noise:24, glitch:20, facing:'environment',
+  words:'ruido, nadie, aquí, todavía, pulso, hueco, eco, resto, sombra, calle, después, otra vez'};
+try { Object.assign(st, JSON.parse(localStorage.getItem('blob3') || '{}')); } catch (e) {}
+const persist = () => { try { localStorage.setItem('blob3', JSON.stringify(st)); } catch (e) {} };
+const opt = k => OPTS[k][st[k] % OPTS[k].length];
+const pal = () => PALETTES[opt('pal')];
+let words = [];
+const parseWords = () => { words = st.words.split(/[,\n]+/).map(w => w.trim()).filter(Boolean); if (!words.length) words = ['—']; };
+parseWords();
+
+function applyPaletteCSS() {
+  const p = pal(), r = document.documentElement.style;
+  r.setProperty('--acc', p.acc); r.setProperty('--ink', p.ink);
+  r.setProperty('--fg', `rgb(${p.fg.join(',')})`);
+}
+
+/* ---------- chips ---------- */
+const chipsEl = $('#chips');
+const fxChip = document.createElement('button');
+fxChip.className = 'chip fx';
+const paintFx = () => {
+  fxChip.innerHTML = st.fx ? '<b>◐</b>EFECTOS' : '<b>◯</b>TAL CUAL';
+  document.body.classList.toggle('clean', !st.fx);
+};
+paintFx();
+fxChip.addEventListener('click', () => { st.fx = !st.fx; paintFx(); persist(); first = true; tracks = []; });
+chipsEl.appendChild(fxChip);
+for (const k of Object.keys(OPTS)) {
+  const b = document.createElement('button');
+  b.className = 'chip';
+  const paint = () => { b.innerHTML = `<b>${NAMES[k]}</b>${opt(k)}`; };
+  paint();
+  b.addEventListener('click', () => {
+    st[k] = (st[k] + 1) % OPTS[k].length; paint(); persist();
+    if (k === 'pal') applyPaletteCSS();
+    if (k === 'base') setupBuffers();
+    if (k === 'track') { first = true; tracks = []; }
+  });
+  chipsEl.appendChild(b);
+}
+const cfgChip = document.createElement('button');
+cfgChip.className = 'chip'; cfgChip.innerHTML = '<b>⚙</b>AJUSTES';
+cfgChip.addEventListener('click', () => { $('#cfg').hidden = false; });
+chipsEl.appendChild(cfgChip);
+applyPaletteCSS();
+
+/* ---------- ajustes ---------- */
+for (const id of ['sens','max','grain','noise','glitch']) {
+  const inp = $('#' + id), out = $('#o-' + id);
+  inp.value = st[id]; out.textContent = st[id];
+  inp.addEventListener('input', () => {
+    st[id] = +inp.value; out.textContent = st[id]; persist();
+    if (id === 'grain') setupBuffers();
+  });
+}
+const wordsEl = $('#words');
+wordsEl.value = st.words;
+wordsEl.addEventListener('input', () => { st.words = wordsEl.value; parseWords(); persist(); });
+$('#cfgclose').addEventListener('click', () => { $('#cfg').hidden = true; });
+
+/* ---------- tamaños ---------- */
+let W = 0, H = 0, dpr = 1, vignette = null, scan = null, safeTop = 0;
+let bw = 0, bh = 0, gw = 0, gh = 0;
+let L, P, M, M2, LB, STK, first = true;
+const NT = new Float32Array(65536);
+for (let i = 0; i < NT.length; i++) NT[i] = Math.random() - 0.5;
+const BAYER = [0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];
+
+let outImg = null, dripA = null, dripB = null, rowJump = null, plusCodes = null, plusTimer = 0, atlasKey = '';
+function setupBuffers() {
+  if (!W) return;
+  const f = opt('base');
+  if (f === '01') { bw = Math.max(16, Math.round(st.grain / 5)); bh = Math.max(4, Math.round(H / (W / bw / 0.62))); }
+  else if (f === 'PIXEL') { bw = Math.max(20, Math.round(st.grain / 3)); bh = Math.max(2, Math.round(bw * H / W)); }
+  else { bw = st.grain; bh = Math.max(2, Math.round(bw * H / W)); }
+  buf.width = bw; buf.height = bh;
+  outImg = bctx.createImageData(bw, bh);
+  dripA = new Float32Array(bw * bh * 3); dripB = new Float32Array(bw * bh * 3);
+  rowJump = new Float32Array(bh); plusCodes = new Uint8Array(bh); plusTimer = 0; atlasKey = '';
+  gw = 64; gh = Math.max(2, Math.round(gw * H / W));
+  det.width = gw; det.height = gh;
+  const n = gw * gh;
+  L = new Uint8Array(n); P = new Uint8Array(n); M = new Uint8Array(n); M2 = new Uint8Array(n);
+  LB = new Int32Array(n); STK = new Int32Array(n);
+  first = true;
+}
+function resize() {
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  safeTop = parseFloat(getComputedStyle($('#safe')).paddingTop) || 0;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const g = ctx.createRadialGradient(W/2, H/2, Math.min(W, H) * 0.3, W/2, H/2, Math.max(W, H) * 0.78);
+  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.62)');
+  vignette = g;
+  const p = document.createElement('canvas'); p.width = 1; p.height = 3;
+  const pc = p.getContext('2d'); pc.fillStyle = 'rgba(0,0,0,0.3)'; pc.fillRect(0, 0, 1, 1);
+  scan = ctx.createPattern(p, 'repeat');
+  setupBuffers();
+}
+window.addEventListener('resize', resize);
+
+/* ---------- vídeo a lienzo (recorte tipo "cover") ---------- */
+function drawVideo(c, w, h) {
+  const vw = video.videoWidth, vh = video.videoHeight;
+  const s = Math.max(W / vw, H / vh), sw = W / s, sh = H / s;
+  c.save();
+  if (st.facing === 'user' && !fromFile) { c.translate(w, 0); c.scale(-1, 1); }
+  c.drawImage(video, (vw - sw) / 2, (vh - sh) / 2, sw, sh, 0, 0, w, h);
+  c.restore();
+}
+
+/* ---------- piel: dither / gris / póster / crudo ---------- */
+let last01 = null;
+function renderBase() {
+  drawVideo(bctx, bw, bh);
+  const img = bctx.getImageData(0, 0, bw, bh), d = img.data;
+  const p = pal(), bg = p.bg, fg = p.fg, mode = opt('base'), nz = st.noise;
+  if (mode === '01') { last01 = d; return; }
+  if (mode === 'PIXEL') { renderPixel(d); bctx.putImageData(outImg, 0, 0); return; }
+  if (mode === 'PLUS') { renderPlus(d); bctx.putImageData(outImg, 0, 0); return; }
+  if (mode === 'INTERF') { renderInterf(d); bctx.putImageData(outImg, 0, 0); return; }
+  const dr = fg[0] - bg[0], dg = fg[1] - bg[1], db = fg[2] - bg[2];
+  let off = (Math.random() * 65536) | 0, i = 0;
+  for (let y = 0; y < bh; y++) {
+    for (let x = 0; x < bw; x++, i += 4) {
+      const n = NT[(off++) & 65535] * nz;
+      if (mode === 'COLOR') {
+        d[i]   = (d[i]   - 128) * 1.35 + 128 + n;
+        d[i+1] = (d[i+1] - 128) * 1.35 + 128 + n;
+        d[i+2] = (d[i+2] - 128) * 1.35 + 128 + n;
+        continue;
+      }
+      let l = (d[i] * 77 + d[i+1] * 150 + d[i+2] * 29) >> 8;
+      l = (l - 128) * 1.55 + 128 + n;
+      let v;
+      if (mode === 'TINTA') v = l > BAYER[((y & 3) << 2) | (x & 3)] * 16 + 8 ? 1 : 0;
+      else if (mode === 'PÓSTER') v = Math.max(0, Math.min(3, Math.floor(l / 64))) / 3;
+      else v = Math.max(0, Math.min(255, l)) / 255;
+      d[i] = bg[0] + dr * v; d[i+1] = bg[1] + dg * v; d[i+2] = bg[2] + db * v;
+    }
+  }
+  bctx.putImageData(img, 0, 0);
+}
+
+/* ---------- filtro 01: la imagen escrita en ceros y unos ---------- */
+let atlas = null;
+function buildAtlas(p, cw, chh) {
+  const aw = Math.max(2, Math.ceil(cw * dpr)), ah = Math.max(2, Math.ceil(chh * dpr));
+  atlas = document.createElement('canvas');
+  atlas.width = aw * 16; atlas.height = ah; atlas.cw = aw; atlas.ch = ah;
+  const a = atlas.getContext('2d');
+  a.textAlign = 'center'; a.textBaseline = 'middle';
+  a.font = `700 ${Math.round(ah * 0.92)}px ${FONT}`;
+  for (let b = 0; b < 2; b++) for (let lv = 0; lv < 8; lv++) {
+    const v = 0.12 + 0.88 * (lv / 7);
+    const c = p.bg.map((bc, k) => Math.round(bc + (p.fg[k] - bc) * v));
+    a.fillStyle = `rgb(${c.join(',')})`;
+    a.fillText(b ? '1' : '0', (b * 8 + lv) * aw + aw / 2, ah / 2 + 1);
+  }
+}
+function render01(p) {
+  const d = last01; if (!d) return;
+  const cw = W / bw, chh = H / bh;
+  const key = `${p.fg}|${p.bg}|${cw.toFixed(2)}|${chh.toFixed(2)}|${dpr}`;
+  if (key !== atlasKey) { atlasKey = key; buildAtlas(p, cw, chh); }
+  ctx.fillStyle = `rgb(${p.bg.join(',')})`; ctx.fillRect(0, 0, W, H);
+  const aw = atlas.cw, ah = atlas.ch, nz = st.noise;
+  let off = (Math.random() * 65536) | 0;
+  for (let y = 0, i = 0; y < bh; y++) {
+    for (let x = 0; x < bw; x++, i += 4) {
+      let l = (d[i] * 77 + d[i+1] * 150 + d[i+2] * 29) >> 8;
+      l = (l - 128) * 1.5 + 128 + NT[(off++) & 65535] * nz;
+      const lv = Math.max(0, Math.min(7, (l / 32) | 0));
+      let b = l > 128 ? 1 : 0;
+      if (Math.random() < nz / 4000) b ^= 1;
+      if (lv === 0 && !b) continue;
+      ctx.drawImage(atlas, (b * 8 + lv) * aw, 0, aw, ah, x * cw, y * chh, cw, chh);
+    }
+  }
+}
+
+/* ---------- filtro PIXEL: bloques que se deslizan y gotean ---------- */
+function renderPixel(d) {
+  const o = outImg.data, t = performance.now() / 1000, amp = 1 + st.noise / 18;
+  if (Math.random() < 0.01 + st.glitch / 1500) {
+    const y0 = (Math.random() * bh) | 0, h = 1 + ((Math.random() * bh * 0.15) | 0), j = (Math.random() - 0.5) * bw * 0.4;
+    for (let y = y0; y < Math.min(bh, y0 + h); y++) rowJump[y] = j;
+  }
+  const prev = dripA, cur = dripB, decay = 0.86;
+  for (let y = 0; y < bh; y++) {
+    rowJump[y] *= 0.88;
+    const off = Math.round(Math.sin(y * 0.45 + t * 1.3) * amp + rowJump[y]);
+    for (let x = 0; x < bw; x++) {
+      let sx = (x - off) % bw; if (sx < 0) sx += bw;
+      const j = (y * bw + sx) * 4, k = (y * bw + x) * 3, i = (y * bw + x) * 4;
+      let r = d[j], g = d[j+1], b = d[j+2];
+      if (y > 0) {
+        const u = k - bw * 3;
+        r = Math.max(r, prev[u] * decay); g = Math.max(g, prev[u+1] * decay); b = Math.max(b, prev[u+2] * decay);
+      }
+      cur[k] = r; cur[k+1] = g; cur[k+2] = b;
+      o[i] = Math.round(r / 51) * 51; o[i+1] = Math.round(g / 51) * 51; o[i+2] = Math.round(b / 51) * 51; o[i+3] = 255;
+    }
+  }
+  dripA = cur; dripB = prev;
+}
+
+/* ---------- filtro PLUS: señal codificada de la tele antigua ---------- */
+function renderPlus(d) {
+  const o = outImg.data, nz = st.noise;
+  if (--plusTimer <= 0) {
+    plusTimer = 3 + ((Math.random() * 8) | 0);
+    for (let y = 0; y < bh; y++) plusCodes[y] = (Math.random() * 3) | 0;
+  }
+  const k = Math.max(2, Math.round(bw * 0.07));
+  const jit = Math.random() < 0.15 ? ((Math.random() - 0.5) * 4) | 0 : 0;
+  let off = (Math.random() * 65536) | 0;
+  for (let y = 0; y < bh; y++) {
+    const c = plusCodes[y], sh = c * k + jit, dim = (y & 1) ? 0.84 : 1;
+    for (let x = 0; x < bw; x++) {
+      const i = (y * bw + x) * 4, sx = x - sh, n = NT[(off++) & 65535] * (nz + 10);
+      if (sx < 0 || sx >= bw) { o[i] = o[i+1] = o[i+2] = 6 + n * 0.3; o[i+3] = 255; continue; }
+      const j = (y * bw + sx) * 4;
+      let l = (d[j] * 77 + d[j+1] * 150 + d[j+2] * 29) >> 8;
+      l = ((l - 128) * 1.3 + 128 + n) * dim;
+      o[i]   = l + (c === 1 ? 22 : c === 2 ? -10 : 0);
+      o[i+1] = l + (c === 2 ? 24 : -6);
+      o[i+2] = l + (c === 1 ? 30 : c === 0 ? 8 : -12);
+      o[i+3] = 255;
+    }
+  }
+}
+
+/* ---------- filtro INTERF: rayas, banda que sube, imagen que se va ---------- */
+let roll = 0, rollV = 0;
+function renderInterf(d) {
+  const o = outImg.data, t = performance.now() / 1000, nz = st.noise;
+  if (rollV === 0 && Math.random() < 0.002 + st.glitch / 3000) rollV = 1 + Math.random() * 3;
+  if (rollV) { roll += rollV; if (roll > bh) { roll = 0; rollV = 0; } }
+  const gap = Math.round(bh * 0.06);
+  const barPos = ((t * 0.18) % 1.3 - 0.15) * bh, barH = bh * 0.09;
+  const lineP = 0.004 + nz / 2500;
+  let off = (Math.random() * 65536) | 0;
+  for (let y = 0; y < bh; y++) {
+    let sy = y, blank = false;
+    if (rollV) { sy = (y + Math.round(roll)) % (bh + gap); if (sy >= bh) blank = true; }
+    const white = Math.random() < lineP;
+    const tear = Math.random() < lineP * 0.6 ? ((Math.random() - 0.5) * bw * 0.3) | 0 : 0;
+    const jit = Math.round(Math.sin(y * 0.9 + t * 40) * 1.2) + tear;
+    const bd = (y - barPos) / barH, band = Math.exp(-bd * bd) * 50;
+    const row = sy * bw * 4;
+    for (let x = 0; x < bw; x++) {
+      const i = (y * bw + x) * 4, n = NT[(off++) & 65535] * (nz + 18);
+      if (blank) { o[i] = o[i+1] = o[i+2] = 4 + n * 0.2; o[i+3] = 255; continue; }
+      if (white) { o[i] = o[i+1] = o[i+2] = 170 + n * 3; o[i+3] = 255; continue; }
+      const xg = Math.min(bw - 1, Math.max(0, x + jit));
+      const xr = Math.min(bw - 1, xg + 2), xb = Math.max(0, xg - 2);
+      o[i]   = d[row + xr * 4]     + band + n;
+      o[i+1] = d[row + xg * 4 + 1] + band + n;
+      o[i+2] = d[row + xb * 4 + 2] + band + n;
+      o[i+3] = 255;
+    }
+  }
+}
+
+/* ---------- detección de blobs ---------- */
+function detect() {
+  drawVideo(dctx, gw, gh);
+  const d = dctx.getImageData(0, 0, gw, gh).data, n = gw * gh, mode = opt('detect');
+  const mt = 8 + (100 - st.sens) * 0.55, bt = 255 - st.sens * 0.9;
+  for (let i = 0, j = 0; i < n; i++, j += 4) L[i] = (d[j] * 77 + d[j+1] * 150 + d[j+2] * 29) >> 8;
+  for (let i = 0; i < n; i++) {
+    const mv = !first && Math.abs(L[i] - P[i]) > mt;
+    const br = L[i] > bt;
+    let on;
+    if (mode === 'MOV') on = mv; else if (mode === 'LUZ') on = br; else on = mv || br;
+    M[i] = on ? 1 : 0;
+  }
+  P.set(L); first = false;
+  for (let y = 0; y < gh; y++) for (let x = 0; x < gw; x++) {
+    const i = y * gw + x;
+    M2[i] = (M[i] || (x > 0 && M[i-1]) || (x < gw-1 && M[i+1]) || (y > 0 && M[i-gw]) || (y < gh-1 && M[i+gw])) ? 1 : 0;
+  }
+  LB.fill(0);
+  const blobs = []; let lab = 0;
+  for (let s = 0; s < n; s++) {
+    if (!M2[s] || LB[s]) continue;
+    lab++; let sp = 0; STK[sp++] = s; LB[s] = lab;
+    let x0 = gw, y0 = gh, x1 = 0, y1 = 0, cnt = 0;
+    while (sp) {
+      const i = STK[--sp], x = i % gw, y = (i / gw) | 0; cnt++;
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+      let k;
+      if (x > 0)      { k = i - 1;  if (M2[k] && !LB[k]) { LB[k] = lab; STK[sp++] = k; } }
+      if (x < gw - 1) { k = i + 1;  if (M2[k] && !LB[k]) { LB[k] = lab; STK[sp++] = k; } }
+      if (y > 0)      { k = i - gw; if (M2[k] && !LB[k]) { LB[k] = lab; STK[sp++] = k; } }
+      if (y < gh - 1) { k = i + gw; if (M2[k] && !LB[k]) { LB[k] = lab; STK[sp++] = k; } }
+    }
+    if (cnt >= 4) {
+      const w = (x1 - x0 + 1) / gw, h = (y1 - y0 + 1) / gh;
+      if (w * h < 0.45) blobs.push({x: x0 / gw, y: y0 / gh, w, h, n: cnt});
+    }
+  }
+  blobs.sort((a, b) => b.n - a.n);
+  return blobs.slice(0, st.max);
+}
+
+/* ---------- seguimiento suave ---------- */
+let tracks = [], nextId = 1;
+function updateTracks(blobs) {
+  const used = new Set();
+  for (const b of blobs) {
+    const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+    let best = null, bd = 0.12;
+    for (const t of tracks) {
+      if (used.has(t)) continue;
+      const dd = Math.hypot(t.tx + t.tw / 2 - cx, t.ty + t.th / 2 - cy);
+      if (dd < bd) { bd = dd; best = t; }
+    }
+    if (best) { used.add(best); best.tx = b.x; best.ty = b.y; best.tw = b.w; best.th = b.h; best.life = 8; best.n = b.n; best.age++; }
+    else {
+      const t = {id: nextId++, x: b.x, y: b.y, w: b.w, h: b.h, tx: b.x, ty: b.y, tw: b.w, th: b.h, life: 8, age: 0, n: b.n};
+      tracks.push(t); used.add(t);
+      if (nextId > 999) nextId = 1;
+    }
+  }
+  for (const t of tracks) {
+    if (!used.has(t)) t.life--;
+    const k = 0.35;
+    t.x += (t.tx - t.x) * k; t.y += (t.ty - t.y) * k; t.w += (t.tw - t.w) * k; t.h += (t.th - t.h) * k;
+  }
+  tracks = tracks.filter(t => t.life > 0);
+}
+
+/* ---------- dibujo ---------- */
+const FONT = 'ui-monospace,"SF Mono",Menlo,"Roboto Mono",Consolas,monospace';
+const pad = (n, l = 2) => String(n).padStart(l, '0');
+const rectOf = t => {
+  let x = t.x * W, y = t.y * H, w = t.w * W, h = t.h * H;
+  if (w < 18) { x -= (18 - w) / 2; w = 18; }
+  if (h < 18) { y -= (18 - h) / 2; h = 18; }
+  return [x, y, w, h];
+};
+
+function drawNet(p) {
+  const mode = opt('net');
+  if (mode === 'NO' || tracks.length < 2) return;
+  ctx.save();
+  ctx.strokeStyle = p.acc; ctx.lineWidth = 1; ctx.globalAlpha = 0.75;
+  const c = tracks.map(t => { const [x, y, w, h] = rectOf(t); return [x + w / 2, y + h / 2, t]; });
+  ctx.beginPath();
+  if (mode === 'RED') {
+    for (const a of c) {
+      let best = null, bd = 1e9;
+      for (const b of c) { if (a === b) continue; const dd = (a[0]-b[0]) ** 2 + (a[1]-b[1]) ** 2; if (dd < bd) { bd = dd; best = b; } }
+      if (best) { ctx.moveTo(a[0], a[1]); ctx.lineTo(best[0], best[1]); }
+    }
+  } else {
+    ctx.setLineDash([3, 4]);
+    c.sort((a, b) => a[2].id - b[2].id);
+    ctx.moveTo(c[0][0], c[0][1]);
+    for (let i = 1; i < c.length; i++) ctx.lineTo(c[i][0], c[i][1]);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawTracks(p) {
+  const inside = opt('inside'), label = opt('label');
+  for (const t of tracks) {
+    const [x, y, w, h] = rectOf(t);
+    const a = Math.min(1, t.life / 4);
+    ctx.save();
+    ctx.globalAlpha = a;
+    // dentro de la caja
+    if (inside === 'INV' || inside === 'TINTE') {
+      ctx.globalCompositeOperation = 'difference';
+      ctx.fillStyle = inside === 'INV' ? '#ffffff' : p.acc;
+      ctx.fillRect(x, y, w, h);
+      ctx.globalCompositeOperation = 'source-over';
+    } else if (inside === 'ZOOM') {
+      const cx = (x + w / 2) / W * bw, cy = (y + h / 2) / H * bh;
+      const sw = w / W * bw / 2, sh = h / H * bh / 2;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(buf, cx - sw / 2, cy - sh / 2, sw, sh, x, y, w, h);
+    } else if (inside === 'PIXEL') {
+      const tw = Math.max(3, Math.round(w / 12)), th = Math.max(3, Math.round(h / 12));
+      tiny.width = tw; tiny.height = th;
+      tctx.drawImage(buf, x / W * bw, y / H * bh, w / W * bw, h / H * bh, 0, 0, tw, th);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(tiny, 0, 0, tw, th, x, y, w, h);
+    }
+    // marco
+    ctx.strokeStyle = p.acc; ctx.lineWidth = 1;
+    ctx.strokeRect(Math.round(x) + 0.5, Math.round(y) + 0.5, Math.round(w), Math.round(h));
+    const c = Math.min(10, w / 3, h / 3);
+    ctx.lineWidth = 2.5; ctx.beginPath();
+    ctx.moveTo(x, y + c); ctx.lineTo(x, y); ctx.lineTo(x + c, y);
+    ctx.moveTo(x + w - c, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + c);
+    ctx.moveTo(x + w, y + h - c); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w - c, y + h);
+    ctx.moveTo(x + c, y + h); ctx.lineTo(x, y + h); ctx.lineTo(x, y + h - c);
+    ctx.stroke();
+    // mira central
+    const mx = x + w / 2, my = y + h / 2;
+    ctx.lineWidth = 1; ctx.beginPath();
+    ctx.moveTo(mx - 3, my); ctx.lineTo(mx + 3, my); ctx.moveTo(mx, my - 3); ctx.lineTo(mx, my + 3);
+    ctx.stroke();
+    // etiqueta
+    if (label !== 'NADA') {
+      const txt = label === 'DATOS'
+        ? `#${pad(t.id, 3)} ${(t.x + t.w / 2).toFixed(2)}/${(t.y + t.h / 2).toFixed(2)}`
+        : words[t.id % words.length].toUpperCase();
+      ctx.font = `700 10px ${FONT}`;
+      const tw = ctx.measureText(txt).width + 8;
+      let ty = y - 14;
+      if (ty < safeTop + 40) ty = y + 1;
+      ctx.fillStyle = p.acc; ctx.fillRect(x, ty, tw, 13);
+      ctx.fillStyle = p.ink; ctx.textBaseline = 'middle';
+      ctx.fillText(txt, x + 4, ty + 7);
+      if (label === 'DATOS') {
+        ctx.font = `500 9px ${FONT}`; ctx.fillStyle = p.acc;
+        const s = `${Math.round(w)}×${Math.round(h)} Δ${t.n}`;
+        ctx.fillText(s, x + w - ctx.measureText(s).width, y + h + 8);
+      }
+    }
+    ctx.restore();
+  }
+}
+
+let gl = 0;
+function glitch() {
+  if (gl <= 0 && Math.random() < st.glitch / 2500) gl = 3 + ((Math.random() * 6) | 0);
+  if (gl > 0) {
+    gl--;
+    const k = 1 + ((Math.random() * 3) | 0);
+    for (let i = 0; i < k; i++) {
+      const y = Math.random() * H, h = 4 + Math.random() * 38, dx = (Math.random() - 0.5) * 70;
+      ctx.drawImage(cv, 0, y * dpr, cv.width, h * dpr, dx, y, W, h);
+    }
+  }
+}
+
+let rec = null, recStart = 0, chunks = [];
+function drawHUD(p) {
+  const top = safeTop + 14;
+  ctx.save();
+  ctx.textBaseline = 'top'; ctx.fillStyle = p.acc;
+  ctx.font = `800 12px ${FONT}`;
+  ctx.fillText(`BLOB/// TRK:${pad(tracks.length)}`, 14, top);
+  ctx.font = `500 9px ${FONT}`; ctx.globalAlpha = 0.8;
+  const tag = {PLUS: 'SEÑAL CODIFICADA', INTERF: 'SIN SINTONÍA', '01': 'BINARIO', PIXEL: 'DERIVA'}[opt('base')] || opt('base');
+  ctx.fillText(`${tag}·${opt('pal')}·${bw}px${opt('track') === 'SÍ' ? '·' + opt('detect') : ''}`, 14, top + 17);
+  ctx.globalAlpha = 1;
+  ctx.font = `700 11px ${FONT}`;
+  const now = new Date().toTimeString().slice(0, 8);
+  ctx.fillText(now, W - 14 - ctx.measureText(now).width, top);
+  if (rec) {
+    const s = (performance.now() - recStart) / 1000;
+    if ((s * 2 | 0) % 2 === 0) {
+      const r = `● REC ${pad(s | 0)}s`;
+      ctx.fillStyle = '#ff2a2a';
+      ctx.fillText(r, W - 14 - ctx.measureText(r).width, top + 16);
+    }
+    if (s >= 60) rec.stop();
+  }
+  ctx.restore();
+}
+
+let running = false;
+function frame() {
+  requestAnimationFrame(frame);
+  if (!running || video.readyState < 2 || !video.videoWidth || !W) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (!st.fx) {
+    // tal cual: la imagen de la cámara, sin nada encima
+    ctx.imageSmoothingEnabled = true;
+    drawVideo(ctx, W, H);
+    return;
+  }
+  const p = pal();
+  renderBase();
+  const tracking = opt('track') === 'SÍ';
+  if (tracking) updateTracks(detect()); else { tracks = []; first = true; }
+  ctx.imageSmoothingEnabled = false;
+  if (opt('base') === '01') render01(p);
+  else ctx.drawImage(buf, 0, 0, W, H);
+  if (tracking) { drawNet(p); drawTracks(p); }
+  glitch();
+  ctx.fillStyle = scan; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = vignette; ctx.fillRect(0, 0, W, H);
+  drawHUD(p);
+}
+requestAnimationFrame(frame);
+
+/* ---------- cámara ---------- */
+let stream = null, fromFile = false, fileUrl = null;
+async function startCam() {
+  const err = $('#err');
+  err.textContent = '';
+  try {
+    if (!window.isSecureContext || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw Object.assign(new Error(), {name: 'NoMedia'});
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    if (fromFile) { video.pause(); video.removeAttribute('src'); video.loop = false; fromFile = false; $('#flip').textContent = '⟲'; }
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: {facingMode: {ideal: st.facing}, width: {ideal: 1920}, height: {ideal: 1080}}, audio: false
+    });
+    video.srcObject = stream;
+    await video.play();
+    running = true; first = true; tracks = [];
+    $('#intro').hidden = true; $('#bar').hidden = false;
+    resize();
+  } catch (e) {
+    running = false;
+    $('#intro').hidden = false;
+    err.textContent =
+      e.name === 'NotAllowedError' ? '› Has dicho que no a la cámara. Dale permiso en los ajustes del navegador y vuelve a tocar el botón.' :
+      e.name === 'NotFoundError'   ? '› No encuentro ninguna cámara en este aparato.' :
+      e.name === 'NoMedia'         ? '› Aquí no hay acceso a la cámara en directo. Usa [ CARGAR UN VÍDEO ] (en el móvil puedes grabar uno en el momento) o instala la app.' :
+      '› La cámara en directo no está disponible aquí (' + (e.name || 'error') + '). Usa [ CARGAR UN VÍDEO ] o instala la app.';
+  }
+}
+$('#go').addEventListener('click', startCam);
+$('#flip').addEventListener('click', () => {
+  if (fromFile) { $('#fin').click(); return; }
+  st.facing = st.facing === 'user' ? 'environment' : 'user'; persist(); startCam();
+});
+
+/* ---------- modo vídeo cargado ---------- */
+$('#file').addEventListener('click', () => $('#fin').click());
+$('#fin').addEventListener('change', async e => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  if (fileUrl) URL.revokeObjectURL(fileUrl);
+  fileUrl = URL.createObjectURL(f);
+  video.srcObject = null;
+  video.src = fileUrl; video.loop = true; video.muted = true;
+  fromFile = true;
+  try {
+    await video.play();
+    running = true; first = true; tracks = [];
+    $('#intro').hidden = true; $('#bar').hidden = false;
+    $('#flip').textContent = '⏏';
+    resize();
+  } catch (err) {
+    $('#err').textContent = '› No he podido reproducir ese vídeo. Prueba con otro (mp4 o mov).';
+  }
+});
+cv.addEventListener('pointerdown', () => { gl = 8; });
+
+/* ---------- foto, vídeo y guardado ---------- */
+const toastEl = $('#toast');
+let toastT = 0;
+function toast(m) { toastEl.textContent = m; toastEl.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('on'), 2600); }
+
+let pvBlob = null, pvUrl = null;
+function showPreview(blob, kind) {
+  pvBlob = blob;
+  if (pvUrl) URL.revokeObjectURL(pvUrl);
+  pvUrl = URL.createObjectURL(blob);
+  const img = $('#pvimg'), vid = $('#pvvid');
+  img.hidden = kind !== 'img'; vid.hidden = kind !== 'video';
+  if (kind === 'img') { img.src = pvUrl; vid.removeAttribute('src'); }
+  else { vid.src = pvUrl; vid.play().catch(() => {}); }
+  $('#pv').hidden = false; $('#bar').classList.add('hide');
+}
+function closePreview() {
+  $('#pv').hidden = true; $('#bar').classList.remove('hide');
+  const vid = $('#pvvid'); vid.pause(); vid.removeAttribute('src');
+  if (pvUrl) { URL.revokeObjectURL(pvUrl); pvUrl = null; }
+  pvBlob = null;
+}
+$('#pvclose').addEventListener('click', closePreview);
+$('#pvsave').addEventListener('click', async () => {
+  if (!pvBlob) return;
+  const t = pvBlob.type;
+  const ext = t.includes('png') ? 'png' : t.includes('jpeg') ? 'jpg' : t.includes('mp4') ? 'mp4' : 'webm';
+  const name = `blob_${new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)}.${ext}`;
+  const file = new File([pvBlob], name, {type: t});
+  if (navigator.canShare && navigator.canShare({files: [file]})) {
+    try { await navigator.share({files: [file]}); closePreview(); return; }
+    catch (e) { if (e.name === 'AbortError') return; }
+  }
+  const a = document.createElement('a');
+  a.href = pvUrl; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  toast('Guardado en descargas');
+});
+
+$('#shot').addEventListener('click', () => {
+  if (!running) return;
+  const f = $('#flash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+  cv.toBlob(b => { if (b) showPreview(b, 'img'); else toast('No se pudo hacer la foto'); }, 'image/jpeg', 0.92);
+});
+
+function pickMime() {
+  if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
+  for (const m of ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'])
+    if (MediaRecorder.isTypeSupported(m)) return m;
+  return '';
+}
+$('#rec').addEventListener('click', () => {
+  if (!running) return;
+  if (rec) { rec.stop(); return; }
+  if (!window.MediaRecorder || !cv.captureStream) { toast('Este navegador no deja grabar vídeo'); return; }
+  const mime = pickMime();
+  let r;
+  try { r = new MediaRecorder(cv.captureStream(30), mime ? {mimeType: mime, videoBitsPerSecond: 6e6} : {}); }
+  catch (e) { toast('No se pudo empezar a grabar'); return; }
+  chunks = [];
+  r.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  r.onstop = () => {
+    const type = r.mimeType || mime || 'video/webm';
+    rec = null; $('#rec').classList.remove('on');
+    if (chunks.length) showPreview(new Blob(chunks, {type: type.split(';')[0]}), 'video');
+  };
+  r.start(500);
+  rec = r; recStart = performance.now();
+  $('#rec').classList.add('on');
+});
+
+/* ---------- modo app instalable ---------- */
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden && rec) rec.stop(); });
+})();
+</script>
+</body>
+</html>
