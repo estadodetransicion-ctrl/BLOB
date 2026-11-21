@@ -39,6 +39,17 @@ button{font:inherit;color:inherit;cursor:pointer;border-radius:0}
 #rec.on{background:var(--acc);color:var(--ink);border-color:var(--acc);animation:bl 1s steps(2) infinite}
 @keyframes bl{50%{opacity:.45}}
 
+/* puerta */
+#gate{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:32px;gap:22px;background:#000 repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px);z-index:5}
+#gateform{display:flex;flex-direction:column;gap:12px;width:min(100%,360px)}
+#code{font:inherit;font-size:18px;letter-spacing:.18em;text-transform:uppercase;background:transparent;color:var(--fg);border:0;border-bottom:1px solid var(--fg);padding:10px 2px;outline:none;border-radius:0;user-select:text;-webkit-user-select:text}
+#code:focus{border-bottom-color:var(--acc)}
+#code::placeholder{color:var(--fg);opacity:.35}
+#gatego{border:1px solid var(--fg);background:transparent;padding:14px 18px;font-size:14px;letter-spacing:.16em;align-self:flex-start}
+#gatego:active{background:var(--acc);border-color:var(--acc);color:#000}
+#gateerr{font-size:12px;color:var(--acc);min-height:1em;letter-spacing:.08em}
+.shake{animation:sh .35s}
+@keyframes sh{20%{transform:translateX(-8px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(3px)}}
 /* intro */
 #intro{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:32px;gap:22px;background:#000 repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px)}
 .logo{font-size:clamp(54px,18vw,120px);font-weight:800;letter-spacing:-.04em;line-height:.85;text-shadow:3px 0 var(--acc),-3px 0 #00e5ff;animation:jit 2.4s infinite}
@@ -99,7 +110,18 @@ textarea{font:inherit;font-size:14px;background:transparent;color:var(--fg);bord
   </div>
 </div>
 
-<div id="intro">
+<div id="gate">
+  <div class="logo">BLOB<span>///</span></div>
+  <p class="sub">acceso restringido<br><i>introduce el código de entrada</i></p>
+  <form id="gateform" autocomplete="off">
+    <input id="code" type="text" inputmode="text" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="CÓDIGO_" aria-label="Código de entrada">
+    <button type="submit" id="gatego">[ ABRIR ]</button>
+  </form>
+  <p id="gateerr"></p>
+  <p class="lic">© 2026 Estado de Transición · <b>uso libre, no comercial</b><br>Úsala, compártela y modifícala cuanto quieras; no la vendas ni la uses para ganar dinero.<br><a href="https://polyformproject.org/licenses/noncommercial/1.0.0" target="_blank" rel="noopener">Licencia PolyForm Noncommercial 1.0.0</a></p>
+</div>
+
+<div id="intro" hidden>
   <div class="logo">BLOB<span>///</span></div>
   <p class="sub">cámara de rastreo · <i>sin ánimo de lucro</i><br>v0.1 · sin señal · sin dueño</p>
   <button id="go">[ ENCENDER EL OJO ]</button>
@@ -919,6 +941,35 @@ $('#rec').addEventListener('click', () => {
   r.start(500);
   rec = r; recStart = performance.now();
   $('#rec').classList.add('on');
+});
+
+/* ---------- puerta: código de entrada ---------- */
+const KEY_HASH = 'ae019b38b4ee9a1cd61a10caa496d8a85c14832ec57db226e1d343279ecd3a28';
+async function sha256(txt) {
+  if (window.crypto && crypto.subtle) {
+    const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(txt));
+    return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+  }
+  return null;
+}
+function openGate() { $('#gate').hidden = true; $('#intro').hidden = false; }
+let unlocked = false;
+try { unlocked = localStorage.getItem('blob3-key') === KEY_HASH; } catch (e) {}
+if (unlocked) openGate();
+$('#gateform').addEventListener('submit', async e => {
+  e.preventDefault();
+  const inp = $('#code'), msg = $('#gateerr');
+  const h = await sha256(inp.value.trim().toUpperCase());
+  if (h === null) { msg.textContent = '› Este navegador no puede comprobar el código.'; return; }
+  if (h === KEY_HASH) {
+    try { localStorage.setItem('blob3-key', KEY_HASH); } catch (e2) {}
+    inp.blur(); msg.textContent = '';
+    openGate();
+  } else {
+    msg.textContent = '› Código incorrecto.';
+    inp.classList.remove('shake'); void inp.offsetWidth; inp.classList.add('shake');
+    inp.select();
+  }
 });
 
 /* ---------- modo app instalable ---------- */

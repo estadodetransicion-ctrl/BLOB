@@ -1,5 +1,5 @@
 // BLOB/// — guarda la app en el móvil para que abra sin conexión
-const CACHE = 'blob-v5';
+const CACHE = 'blob-v6';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
