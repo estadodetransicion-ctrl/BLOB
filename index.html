@@ -29,11 +29,6 @@ button{font:inherit;color:inherit;cursor:pointer;border-radius:0}
 .chip{flex:none;border:1px solid var(--fg);background:rgba(0,0,0,.6);font-size:11px;letter-spacing:.08em;padding:8px 10px;text-transform:uppercase}
 .chip b{color:var(--acc);font-weight:700;margin-right:6px}
 .chip:active{background:var(--acc);color:var(--ink)}
-.chip.fx{border-color:var(--acc);background:var(--acc);color:var(--ink);font-weight:700}
-.chip.fx b{color:var(--ink)}
-body.clean .chip.fx{background:transparent;color:var(--fg)}
-body.clean .chip.fx b{color:var(--fg)}
-body.clean .chip:not(.fx){opacity:.3;pointer-events:none}
 .main{display:flex;justify-content:space-around;align-items:center}
 .rb{width:54px;height:54px;border:1px solid var(--fg);background:rgba(0,0,0,.55);font-size:20px;line-height:1}
 .rb:active{background:var(--fg);color:var(--ink)}
@@ -54,6 +49,9 @@ body.clean .chip:not(.fx){opacity:.3;pointer-events:none}
 #go{border:1px solid var(--fg);background:transparent;padding:16px 18px;font-size:14px;letter-spacing:.16em}
 #file{border:1px dashed var(--fg);background:transparent;padding:12px 18px;font-size:12px;letter-spacing:.16em;opacity:.85;margin-top:-10px}
 #go:active,#file:active{background:var(--acc);border-color:var(--acc);color:#000}
+.lic{position:absolute;left:32px;right:32px;bottom:calc(20px + env(safe-area-inset-bottom));font-size:10px;letter-spacing:.06em;line-height:1.75;opacity:.6}
+.lic b{color:var(--acc);font-weight:700;text-transform:uppercase;letter-spacing:.12em}
+.lic a{color:var(--fg)}
 #err{font-size:12px;line-height:1.6;color:var(--acc);max-width:34em;min-height:1em}
 
 /* ajustes */
@@ -103,22 +101,24 @@ textarea{font:inherit;font-size:14px;background:transparent;color:var(--fg);bord
 
 <div id="intro">
   <div class="logo">BLOB<span>///</span></div>
-  <p class="sub">cámara de rastreo · <i>uso privado</i><br>v0.1 · sin señal · sin dueño</p>
+  <p class="sub">cámara de rastreo · <i>sin ánimo de lucro</i><br>v0.1 · sin señal · sin dueño</p>
   <button id="go">[ ENCENDER EL OJO ]</button>
   <button id="file" class="alt">[ CARGAR UN VÍDEO ]</button>
   <input type="file" id="fin" accept="video/*" hidden>
   <p id="err"></p>
+  <p class="lic">© 2026 Estado de Transición · <b>uso libre, no comercial</b><br>Úsala, compártela y modifícala cuanto quieras; no la vendas ni la uses para ganar dinero.<br><a href="https://polyformproject.org/licenses/noncommercial/1.0.0" target="_blank" rel="noopener">Licencia PolyForm Noncommercial 1.0.0</a></p>
 </div>
 
 <div id="cfg" hidden>
   <h2>AJUSTES<span>_</span></h2>
+  <label>Volumen de la música <em id="o-vol"></em><input type="range" id="vol" min="0" max="100"></label>
   <label>Sensibilidad <em id="o-sens"></em><input type="range" id="sens" min="5" max="100"></label>
   <label>Máximo de blobs <em id="o-max"></em><input type="range" id="max" min="2" max="30"></label>
   <label>Resolución (menos = más píxel) <em id="o-grain"></em><input type="range" id="grain" min="90" max="520" step="10"></label>
   <label>Ruido <em id="o-noise"></em><input type="range" id="noise" min="0" max="90"></label>
   <label>Glitch <em id="o-glitch"></em><input type="range" id="glitch" min="0" max="100"></label>
   <label>Palabras (separadas por comas o por líneas)<textarea id="words" rows="6"></textarea></label>
-  <p class="hint">· El primer botón alterna entre EFECTOS y la cámara TAL CUAL.<br>· RUIDO también decide cuánto se mueven los píxeles y cuántas rayas salen en INTERF.<br>· Toca la pantalla para forzar un glitch.<br>· El modo ETIQ › PALABRAS pone tus palabras sobre lo que se mueve.<br>· Los vídeos se cortan solos a los 60 segundos.</p>
+  <p class="hint">· MÚSICA: cada blob es una nota (izquierda grave, derecha aguda, arriba una octava más). Su tamaño decide cuánto dura; cuanto más movimiento, más se abre el zumbido de fondo. La canción se graba dentro del vídeo.<br>· FILTRO › REAL es la cámara tal cual: con RASTREO › NO, sin nada encima.<br>· RUIDO también decide cuánto se mueven los píxeles y cuántas rayas salen en INTERF.<br>· Toca la pantalla para forzar un glitch.<br>· El modo ETIQ › PALABRAS pone tus palabras sobre lo que se mueve.<br>· Los vídeos se cortan solos a los 60 segundos.</p>
   <button id="cfgclose">[ VOLVER ]</button>
 </div>
 
@@ -148,17 +148,18 @@ const PALETTES = {
   'CROMO':  {bg:[0,0,0],     fg:[255,255,255], acc:'#ffffff', ink:'#000000'}
 };
 const OPTS = {
-  base:   ['TINTA','GRIS','PÓSTER','COLOR','01','PIXEL','PLUS','INTERF'],
+  base:   ['REAL','TINTA','GRIS','PÓSTER','COLOR','01','PIXEL','PLUS','INTERF'],
   pal:    Object.keys(PALETTES),
   track:  ['SÍ','NO'],
+  music:  ['OSCURA','ÁCIDA','NO'],
   detect: ['MOV','LUZ','MIX'],
   inside: ['INV','ZOOM','PIXEL','TINTE','NADA'],
   label:  ['DATOS','PALABRAS','NADA'],
   net:    ['RED','CADENA','NO']
 };
-const NAMES = {base:'FILTRO', track:'RASTREO', detect:'OJO', inside:'DENTRO', label:'ETIQ', net:'HILOS', pal:'TINTA'};
+const NAMES = {base:'FILTRO', track:'RASTREO', music:'MÚSICA', detect:'OJO', inside:'DENTRO', label:'ETIQ', net:'HILOS', pal:'TINTA'};
 
-const st = {fx:true, base:0, track:0, detect:0, inside:0, label:0, net:0, pal:0,
+const st = {base:0, track:0, music:0, vol:70, detect:0, inside:0, label:0, net:0, pal:0,
   sens:55, max:12, grain:260, noise:24, glitch:20, facing:'environment',
   words:'ruido, nadie, aquí, todavía, pulso, hueco, eco, resto, sombra, calle, después, otra vez'};
 try { Object.assign(st, JSON.parse(localStorage.getItem('blob3') || '{}')); } catch (e) {}
@@ -177,15 +178,6 @@ function applyPaletteCSS() {
 
 /* ---------- chips ---------- */
 const chipsEl = $('#chips');
-const fxChip = document.createElement('button');
-fxChip.className = 'chip fx';
-const paintFx = () => {
-  fxChip.innerHTML = st.fx ? '<b>◐</b>EFECTOS' : '<b>◯</b>TAL CUAL';
-  document.body.classList.toggle('clean', !st.fx);
-};
-paintFx();
-fxChip.addEventListener('click', () => { st.fx = !st.fx; paintFx(); persist(); first = true; tracks = []; });
-chipsEl.appendChild(fxChip);
 for (const k of Object.keys(OPTS)) {
   const b = document.createElement('button');
   b.className = 'chip';
@@ -196,6 +188,7 @@ for (const k of Object.keys(OPTS)) {
     if (k === 'pal') applyPaletteCSS();
     if (k === 'base') setupBuffers();
     if (k === 'track') { first = true; tracks = []; }
+    if (k === 'music') initAudio();
   });
   chipsEl.appendChild(b);
 }
@@ -206,12 +199,13 @@ chipsEl.appendChild(cfgChip);
 applyPaletteCSS();
 
 /* ---------- ajustes ---------- */
-for (const id of ['sens','max','grain','noise','glitch']) {
+for (const id of ['vol','sens','max','grain','noise','glitch']) {
   const inp = $('#' + id), out = $('#o-' + id);
   inp.value = st[id]; out.textContent = st[id];
   inp.addEventListener('input', () => {
     st[id] = +inp.value; out.textContent = st[id]; persist();
     if (id === 'grain') setupBuffers();
+    if (id === 'vol' && master) master.gain.setTargetAtTime(st.vol / 100, actx.currentTime, 0.05);
   });
 }
 const wordsEl = $('#words');
@@ -276,6 +270,7 @@ function drawVideo(c, w, h) {
 let last01 = null;
 function renderBase() {
   drawVideo(bctx, bw, bh);
+  if (opt('base') === 'REAL') return;
   const img = bctx.getImageData(0, 0, bw, bh), d = img.data;
   const p = pal(), bg = p.bg, fg = p.fg, mode = opt('base'), nz = st.noise;
   if (mode === '01') { last01 = d; return; }
@@ -553,6 +548,11 @@ function drawTracks(p) {
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(tiny, 0, 0, tw, th, x, y, w, h);
     }
+    // destello cuando el blob suena
+    if (t.hit) {
+      const dt = performance.now() - t.hit;
+      if (dt >= 0 && dt < 160) { ctx.globalAlpha = a * 0.4 * (1 - dt / 160); ctx.fillStyle = p.acc; ctx.fillRect(x, y, w, h); ctx.globalAlpha = a; }
+    }
     // marco
     ctx.strokeStyle = p.acc; ctx.lineWidth = 1;
     ctx.strokeRect(Math.round(x) + 0.5, Math.round(y) + 0.5, Math.round(w), Math.round(h));
@@ -612,7 +612,8 @@ function drawHUD(p) {
   ctx.fillText(`BLOB/// TRK:${pad(tracks.length)}`, 14, top);
   ctx.font = `500 9px ${FONT}`; ctx.globalAlpha = 0.8;
   const tag = {PLUS: 'SEÑAL CODIFICADA', INTERF: 'SIN SINTONÍA', '01': 'BINARIO', PIXEL: 'DERIVA'}[opt('base')] || opt('base');
-  ctx.fillText(`${tag}·${opt('pal')}·${bw}px${opt('track') === 'SÍ' ? '·' + opt('detect') : ''}`, 14, top + 17);
+  const mus = opt('music') !== 'NO' ? `·♪${opt('music')} ${MUS[opt('music')].bpm}` : '';
+  ctx.fillText(`${tag}·${opt('pal')}·${bw}px${opt('track') === 'SÍ' ? '·' + opt('detect') : ''}${mus}`, 14, top + 17);
   ctx.globalAlpha = 1;
   ctx.font = `700 11px ${FONT}`;
   const now = new Date().toTimeString().slice(0, 8);
@@ -634,26 +635,142 @@ function frame() {
   requestAnimationFrame(frame);
   if (!running || video.readyState < 2 || !video.videoWidth || !W) return;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  if (!st.fx) {
-    // tal cual: la imagen de la cámara, sin nada encima
-    ctx.imageSmoothingEnabled = true;
-    drawVideo(ctx, W, H);
-    return;
-  }
-  const p = pal();
+  const p = pal(), f = opt('base'), real = f === 'REAL';
   renderBase();
   const tracking = opt('track') === 'SÍ';
   if (tracking) updateTracks(detect()); else { tracks = []; first = true; }
-  ctx.imageSmoothingEnabled = false;
-  if (opt('base') === '01') render01(p);
-  else ctx.drawImage(buf, 0, 0, W, H);
+  musicTick();
+  if (real) {
+    // la imagen de la cámara tal cual, a toda resolución
+    ctx.imageSmoothingEnabled = true;
+    drawVideo(ctx, W, H);
+  } else {
+    ctx.imageSmoothingEnabled = false;
+    if (f === '01') render01(p);
+    else ctx.drawImage(buf, 0, 0, W, H);
+  }
   if (tracking) { drawNet(p); drawTracks(p); }
+  if (real) {
+    if (tracking) drawHUD(p);
+    else if (rec && performance.now() - recStart >= 60000) rec.stop();
+    return;
+  }
   glitch();
   ctx.fillStyle = scan; ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = vignette; ctx.fillRect(0, 0, W, H);
   drawHUD(p);
 }
 requestAnimationFrame(frame);
+
+/* ---------- música generativa: cada blob, una nota ---------- */
+const AC = window.AudioContext || window.webkitAudioContext;
+let actx = null, master = null, recDest = null, bus = null, delayIn = null;
+let drone = [], droneFilter = null, droneGain = null, noiseBuf = null;
+let step = 0, nextStepT = 0;
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+const SCALES = {'OSCURA': [0, 1, 3, 5, 7, 8, 10], 'ÁCIDA': [0, 3, 5, 7, 10]};
+const MUS = {
+  'OSCURA': {bpm: 84,  wave: 'triangle', q: 3,  root: 45},
+  'ÁCIDA':  {bpm: 124, wave: 'square',   q: 14, root: 45}
+};
+const PROG = [0, -4, -2, 0];   // i · VI · VII · i, un compás cada uno
+
+function initAudio() {
+  if (!AC) return;
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+  if (!actx) {
+    actx = new AC();
+    master = actx.createGain(); master.gain.value = st.vol / 100;
+    const comp = actx.createDynamicsCompressor();
+    comp.threshold.value = -18; comp.ratio.value = 4;
+    master.connect(comp); comp.connect(actx.destination);
+    if (actx.createMediaStreamDestination) { recDest = actx.createMediaStreamDestination(); comp.connect(recDest); }
+    // eco
+    delayIn = actx.createGain(); delayIn.gain.value = 0.32;
+    const dl = actx.createDelay(1.5), fb = actx.createGain(), dlf = actx.createBiquadFilter();
+    dl.delayTime.value = 0.36; fb.gain.value = 0.38; dlf.type = 'lowpass'; dlf.frequency.value = 2200;
+    delayIn.connect(dl); dl.connect(dlf); dlf.connect(fb); fb.connect(dl); dlf.connect(master);
+    bus = master;
+    // zumbido de fondo
+    droneFilter = actx.createBiquadFilter(); droneFilter.type = 'lowpass'; droneFilter.frequency.value = 200; droneFilter.Q.value = 7;
+    droneGain = actx.createGain(); droneGain.gain.value = 0;
+    droneFilter.connect(droneGain); droneGain.connect(master);
+    for (const det of [-9, 0, 9]) {
+      const o = actx.createOscillator(); o.type = 'sawtooth'; o.detune.value = det;
+      o.frequency.value = mtof(33); o.connect(droneFilter); o.start(); drone.push(o);
+    }
+    // ruido para la percusión
+    noiseBuf = actx.createBuffer(1, Math.floor(actx.sampleRate * 0.5), actx.sampleRate);
+    const ch = noiseBuf.getChannelData(0);
+    for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
+  }
+  if (actx.state === 'suspended') actx.resume().catch(() => {});
+}
+
+function env(g, t, peak, dur) {
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(peak, t + 0.008);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+}
+function kick(t) {
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.16);
+  env(g, t, 0.9, 0.32); o.connect(g); g.connect(bus); o.start(t); o.stop(t + 0.35);
+}
+function noiseHit(t, type, freq, peak, dur, echo) {
+  const s = actx.createBufferSource(), f = actx.createBiquadFilter(), g = actx.createGain();
+  s.buffer = noiseBuf; f.type = type; f.frequency.value = freq;
+  env(g, t, peak, dur); s.connect(f); f.connect(g); g.connect(bus);
+  if (echo) g.connect(delayIn);
+  s.start(t, Math.random() * 0.3); s.stop(t + dur + 0.02);
+}
+function note(tr, t, root, mode) {
+  const S = MUS[mode], sc = SCALES[mode];
+  const cx = tr.x + tr.w / 2, cy = tr.y + tr.h / 2;
+  const deg = Math.min(sc.length * 2 - 1, Math.floor(cx * sc.length * 2));
+  const midi = root + 12 + sc[deg % sc.length] + 12 * Math.floor(deg / sc.length) + (cy < 0.33 ? 12 : 0);
+  const dur = 0.14 + Math.min(1.3, tr.w * tr.h * 9);
+  const o = actx.createOscillator(), f = actx.createBiquadFilter(), g = actx.createGain();
+  o.type = S.wave; o.frequency.value = mtof(midi);
+  f.type = 'lowpass'; f.Q.value = S.q;
+  const top = 500 + (1 - cy) * 4200;
+  f.frequency.setValueAtTime(top, t); f.frequency.exponentialRampToValueAtTime(Math.max(160, top * 0.15), t + dur);
+  env(g, t, mode === 'ÁCIDA' ? 0.13 : 0.2, dur);
+  o.connect(f); f.connect(g);
+  let out = g;
+  if (actx.createStereoPanner) { const pn = actx.createStereoPanner(); pn.pan.value = cx * 1.6 - 0.8; g.connect(pn); out = pn; }
+  out.connect(bus); out.connect(delayIn);
+  o.start(t); o.stop(t + dur + 0.05);
+  tr.hit = performance.now() + Math.max(0, t - actx.currentTime) * 1000;
+}
+function playStep(s, t, root, mode) {
+  const n = tracks.length, b = s % 16;
+  if (n > 0 && (b === 0 || b === 8 || (mode === 'ÁCIDA' && (b === 4 || b === 12)))) kick(t);
+  if (n > 2 && (b === 4 || b === 12) && mode === 'OSCURA') noiseHit(t, 'bandpass', 1600, 0.22, 0.18, true);
+  if (n > 0 && (b & 1) && Math.random() < Math.min(0.9, n / 7)) noiseHit(t, 'highpass', 7500, 0.07, 0.04, false);
+  for (const tr of tracks) {
+    if (tr.age > 1 && tr.id % 8 === b % 8 && Math.random() < 0.75) { note(tr, t, root, mode); break; }
+  }
+}
+function musicTick() {
+  if (!actx) return;
+  const mode = opt('music'), now = actx.currentTime;
+  if (mode === 'NO' || !running) { droneGain.gain.setTargetAtTime(0, now, 0.25); nextStepT = 0; return; }
+  const S = MUS[mode];
+  let energy = 0; for (const t of tracks) energy += t.w * t.h;
+  energy = Math.min(1, energy * 3);
+  const root = S.root + PROG[Math.floor(step / 16) % PROG.length];
+  for (const o of drone) o.frequency.setTargetAtTime(mtof(root - 12), now, 0.4);
+  droneGain.gain.setTargetAtTime(0.05 + 0.1 * Math.min(1, tracks.length / 4), now, 0.6);
+  droneFilter.frequency.setTargetAtTime(110 + energy * 2600, now, 0.12);
+  const spb = 60 / S.bpm / 4;
+  if (nextStepT < now) nextStepT = now + 0.05;
+  while (nextStepT < now + 0.12) { playStep(step, nextStepT, S.root + PROG[Math.floor(step / 16) % PROG.length], mode); step++; nextStepT += spb; }
+}
+document.addEventListener('visibilitychange', () => {
+  if (!actx) return;
+  if (document.hidden) actx.suspend().catch(() => {}); else actx.resume().catch(() => {});
+});
 
 /* ---------- cámara ---------- */
 let stream = null, fromFile = false, fileUrl = null;
@@ -663,7 +780,7 @@ async function startCam() {
   try {
     if (!window.isSecureContext || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw Object.assign(new Error(), {name: 'NoMedia'});
     if (stream) stream.getTracks().forEach(t => t.stop());
-    if (fromFile) { video.pause(); video.removeAttribute('src'); video.loop = false; fromFile = false; $('#flip').textContent = '⟲'; }
+    if (fromFile) { video.pause(); video.removeAttribute('src'); video.load(); video.loop = false; fromFile = false; $('#flip').textContent = '⟲'; }
     stream = await navigator.mediaDevices.getUserMedia({
       video: {facingMode: {ideal: st.facing}, width: {ideal: 1920}, height: {ideal: 1080}}, audio: false
     });
@@ -682,14 +799,15 @@ async function startCam() {
       '› La cámara en directo no está disponible aquí (' + (e.name || 'error') + '). Usa [ CARGAR UN VÍDEO ] o instala la app.';
   }
 }
-$('#go').addEventListener('click', startCam);
+$('#go').addEventListener('click', () => { initAudio(); startCam(); });
 $('#flip').addEventListener('click', () => {
+  initAudio();
   if (fromFile) { $('#fin').click(); return; }
   st.facing = st.facing === 'user' ? 'environment' : 'user'; persist(); startCam();
 });
 
 /* ---------- modo vídeo cargado ---------- */
-$('#file').addEventListener('click', () => $('#fin').click());
+$('#file').addEventListener('click', () => { initAudio(); $('#fin').click(); });
 $('#fin').addEventListener('change', async e => {
   const f = e.target.files && e.target.files[0];
   e.target.value = '';
@@ -697,20 +815,36 @@ $('#fin').addEventListener('change', async e => {
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
   if (fileUrl) URL.revokeObjectURL(fileUrl);
   fileUrl = URL.createObjectURL(f);
+  const err = $('#err');
+  err.textContent = '› Cargando vídeo…';
+  video.pause();
   video.srcObject = null;
-  video.src = fileUrl; video.loop = true; video.muted = true;
-  fromFile = true;
+  video.muted = true; video.defaultMuted = true; video.loop = true; video.playsInline = true; video.preload = 'auto';
+  video.src = fileUrl;
   try {
-    await video.play();
-    running = true; first = true; tracks = [];
-    $('#intro').hidden = true; $('#bar').hidden = false;
-    $('#flip').textContent = '⏏';
-    resize();
-  } catch (err) {
-    $('#err').textContent = '› No he podido reproducir ese vídeo. Prueba con otro (mp4 o mov).';
+    await new Promise((res, rej) => {
+      const clean = () => { clearTimeout(to); video.removeEventListener('loadeddata', ok); video.removeEventListener('error', bad); };
+      const ok = () => { clean(); res(); };
+      const bad = () => { clean(); rej({name: 'Formato', code: video.error ? video.error.code : '?'}); };
+      const to = setTimeout(() => { clean(); rej({name: 'Tiempo'}); }, 20000);
+      video.addEventListener('loadeddata', ok); video.addEventListener('error', bad);
+      video.load();
+    });
+  } catch (e2) {
+    err.textContent = e2.name === 'Tiempo'
+      ? '› El vídeo tarda demasiado en cargar. Prueba con uno más corto.'
+      : `› Este navegador no sabe leer ese vídeo (código ${e2.code}). Si viene del iPhone, prueba con otro o activa Ajustes › Cámara › Formatos › «Más compatible».`;
+    return;
   }
+  err.textContent = '';
+  fromFile = true; running = true; first = true; tracks = [];
+  $('#intro').hidden = true; $('#bar').hidden = false;
+  $('#flip').textContent = '⏏';
+  resize();
+  try { await video.play(); }
+  catch (e3) { toast('Toca la pantalla para ponerlo en marcha'); }
 });
-cv.addEventListener('pointerdown', () => { gl = 8; });
+cv.addEventListener('pointerdown', () => { gl = 8; if (fromFile && video.paused) video.play().catch(() => {});if (actx && actx.state !== 'running') actx.resume().catch(() => {}); });
 
 /* ---------- foto, vídeo y guardado ---------- */
 const toastEl = $('#toast');
@@ -725,7 +859,10 @@ function showPreview(blob, kind) {
   const img = $('#pvimg'), vid = $('#pvvid');
   img.hidden = kind !== 'img'; vid.hidden = kind !== 'video';
   if (kind === 'img') { img.src = pvUrl; vid.removeAttribute('src'); }
-  else { vid.src = pvUrl; vid.play().catch(() => {}); }
+  else {
+    vid.src = pvUrl; vid.muted = false;
+    vid.play().catch(() => { vid.muted = true; vid.play().catch(() => {}); });
+  }
   $('#pv').hidden = false; $('#bar').classList.add('hide');
 }
 function closePreview() {
@@ -758,7 +895,7 @@ $('#shot').addEventListener('click', () => {
 
 function pickMime() {
   if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
-  for (const m of ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'])
+  for (const m of ['video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'])
     if (MediaRecorder.isTypeSupported(m)) return m;
   return '';
 }
@@ -768,7 +905,9 @@ $('#rec').addEventListener('click', () => {
   if (!window.MediaRecorder || !cv.captureStream) { toast('Este navegador no deja grabar vídeo'); return; }
   const mime = pickMime();
   let r;
-  try { r = new MediaRecorder(cv.captureStream(30), mime ? {mimeType: mime, videoBitsPerSecond: 6e6} : {}); }
+  const vs = cv.captureStream(30);
+  if (recDest && opt('music') !== 'NO') recDest.stream.getAudioTracks().forEach(tk => vs.addTrack(tk));
+  try { r = new MediaRecorder(vs, mime ? {mimeType: mime, videoBitsPerSecond: 6e6} : {}); }
   catch (e) { toast('No se pudo empezar a grabar'); return; }
   chunks = [];
   r.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
